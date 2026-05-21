@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 
 /**
  * DTO estandarizado para respuestas de error de la API.
+ * 
+ * 
+ * 
+ * 
  */
 @Data
 @NoArgsConstructor
