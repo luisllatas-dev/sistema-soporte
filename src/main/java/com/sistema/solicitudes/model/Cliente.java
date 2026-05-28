@@ -23,3 +23,4 @@ public class Cliente {
     @Email(message = "El correo electrónico debe tener un formato válido")
     private String correoElectronico;
 }
+
