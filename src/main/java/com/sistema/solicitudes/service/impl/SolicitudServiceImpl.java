@@ -38,6 +38,7 @@ public class SolicitudServiceImpl implements ISolicitudService {
                 "No hay conexión a internet en el área de contabilidad",
                 EstadoSolicitud.ABIERTA,
                 LocalDateTime.now(),
+                null,
                 cliente1,
                 tecnico1
         );
@@ -51,6 +52,7 @@ public class SolicitudServiceImpl implements ISolicitudService {
                 "La impresora del piso 3 no imprime correctamente",
                 EstadoSolicitud.EN_PROCESO,
                 LocalDateTime.now().minusDays(2),
+                null,
                 cliente2,
                 tecnico2
         );
@@ -63,6 +65,7 @@ public class SolicitudServiceImpl implements ISolicitudService {
                 "Actualización del sistema operativo en los equipos de ventas",
                 EstadoSolicitud.CERRADA,
                 LocalDateTime.now().minusDays(5),
+                null,
                 cliente3,
                 tecnico1
         );
@@ -111,6 +114,7 @@ public class SolicitudServiceImpl implements ISolicitudService {
         // Mantener la fecha de creación original
         Solicitud existente = solicitudes.get(id);
         solicitud.setFechaCreacion(existente.getFechaCreacion());
+        solicitud.setFechaActualizacion(LocalDateTime.now());
 
         solicitudes.put(id, solicitud);
         return solicitud;

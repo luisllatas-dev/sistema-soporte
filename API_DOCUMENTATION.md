@@ -29,6 +29,7 @@ Representa una solicitud de soporte técnico en el sistema.
 | `descripcion` | String | `@NotBlank` | Descripción detallada del problema. |
 | `estado` | Enum | `@NotNull` | Estado actual de la solicitud (`ABIERTA`, `EN_PROCESO`, `CERRADA`). |
 | `fechaCreacion` | LocalDateTime | - | Fecha y hora en la que se creó la solicitud (autogenerada). |
+| `fechaActualizacion` | LocalDateTime | - | Fecha y hora de la última modificación (nulo inicialmente). |
 | `cliente` | Cliente | `@NotNull`, `@Valid` | Información del cliente que solicita el soporte. |
 | `tecnicoAsignado` | Tecnico | `@NotNull`, `@Valid` | Información del técnico asignado a la solicitud. |
 

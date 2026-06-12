@@ -27,6 +27,8 @@ public class Solicitud {
 
     private LocalDateTime fechaCreacion;
 
+    private LocalDateTime fechaActualizacion;
+
     @NotNull(message = "El cliente es obligatorio")
     @Valid
     private Cliente cliente;
