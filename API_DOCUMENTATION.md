@@ -10,7 +10,7 @@ Esta es la documentación oficial de la API REST para el sistema de solicitudes 
   * Java 25
   * Spring Boot 4.0.6
   * Springdoc OpenAPI 2.8.8 (Swagger)
-  * Persistencia: Base de datos simulada en memoria (`LinkedHashMap` thread-safe para propósitos de demostración).
+  * Persistencia: Capa de Repositorio (`ISolicitudRepository` y `SolicitudRepositoryImpl`) con base de datos simulada en memoria (`LinkedHashMap` thread-safe).
 * **Servidor Local:** `http://localhost:8080`
 * **Documentación Interactiva:**
   * **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
@@ -67,10 +67,12 @@ Estructura unificada de comunicación para todas las respuestas de la API.
 ## 🛤️ Endpoints del API (`/api/solicitudes`)
 
 ### 1. Obtener todas las solicitudes
-Retorna una lista completa de todas las solicitudes registradas en memoria, envueltas en el formato estándar de éxito.
+Retorna una lista completa de todas las solicitudes registradas en memoria, opcionalmente filtradas por estado.
 
 * **Método:** `GET`
 * **Ruta:** `/api/solicitudes`
+* **Parámetros de Consulta (Query Params - Opcional):**
+  * `estado` (Enum): Filtrar por el estado de la solicitud (`ABIERTA`, `EN_PROCESO`, `CERRADA`). Ej: `/api/solicitudes?estado=ABIERTA`
 * **Respuesta Exitosa (200 OK):**
   ```json
   {
@@ -276,7 +278,51 @@ Sobrescribe todos los campos de una solicitud existente según su ID. La respues
 
 ---
 
-### 5. Eliminar una solicitud
+### 5. Actualizar el estado de una solicitud
+Actualiza únicamente el estado (`ABIERTA`, `EN_PROCESO`, `CERRADA`) de una solicitud a partir de su ID y el estado especificado en la ruta.
+
+* **Método:** `PUT`
+* **Ruta:** `/api/solicitudes/{id}/estado/{estado}`
+* **Parámetros de Ruta:**
+  * `id` (Long): Identificador de la solicitud.
+  * `estado` (Enum): Nuevo estado (`ABIERTA`, `EN_PROCESO`, `CERRADA`).
+* **Respuesta Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Estado de la solicitud actualizado exitosamente",
+    "data": {
+      "id": 1,
+      "descripcion": "No hay conexión a internet en el área de contabilidad",
+      "estado": "EN_PROCESO",
+      "fechaCreacion": "2026-06-08T19:45:00",
+      "fechaActualizacion": "2026-06-12T16:35:10",
+      "cliente": {
+        "id": 1,
+        "nombre": "Carlos Mendoza",
+        "correoElectronico": "carlos.mendoza@email.com"
+      },
+      "tecnicoAsignado": {
+        "id": 1,
+        "nombre": "Ana García",
+        "especialidad": "Redes y Conectividad"
+      }
+    },
+    "timestamp": "2026-06-12T16:35:10"
+  }
+  ```
+* **Respuesta de Error (404 Not Found):**
+  ```json
+  {
+    "success": false,
+    "message": "No se encontró la solicitud con ID: 99",
+    "timestamp": "2026-06-12T16:35:15"
+  }
+  ```
+
+---
+
+### 6. Eliminar una solicitud
 Elimina del sistema una solicitud a partir de su ID. Devuelve una respuesta de éxito con `data` nulo en formato JSON.
 
 * **Método:** `DELETE`

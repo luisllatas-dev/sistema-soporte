@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sistema.solicitudes.dto.ApiResponse;
+import com.sistema.solicitudes.model.EstadoSolicitud;
 import com.sistema.solicitudes.model.Solicitud;
 import com.sistema.solicitudes.service.interfaces.ISolicitudService;
 
@@ -46,8 +48,9 @@ public class SolicitudController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Lista de solicitudes obtenida exitosamente")
     })
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerTodas() {
-        List<Solicitud> lista = solicitudService.obtenerTodas();
+    public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerTodas(
+            @RequestParam(required = false) EstadoSolicitud estado) {
+        List<Solicitud> lista = solicitudService.obtenerTodas(estado);
         return ResponseEntity.ok(ApiResponse.success(lista, "Lista de solicitudes obtenida exitosamente"));
     }
 
@@ -96,6 +99,24 @@ public class SolicitudController {
                                                              @Valid @RequestBody Solicitud solicitud) {
         Solicitud actualizada = solicitudService.actualizar(id, solicitud);
         return ResponseEntity.ok(ApiResponse.success(actualizada, "Solicitud actualizada exitosamente"));
+    }
+
+    /**
+     * Actualiza únicamente el estado de una solicitud existente.
+     */
+    @Operation(summary = "Actualizar estado de una solicitud",
+               description = "Actualiza el estado de una solicitud de soporte técnico según su ID y el nuevo estado especificado")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Estado actualizado exitosamente"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+    })
+    @PutMapping("/{id}/estado/{estado}")
+    public ResponseEntity<ApiResponse<Solicitud>> actualizarEstado(
+            @PathVariable Long id,
+            @PathVariable EstadoSolicitud estado) {
+        Solicitud actualizada = solicitudService.actualizarEstado(id, estado);
+        return ResponseEntity.ok(ApiResponse.success(actualizada, "Estado de la solicitud actualizado exitosamente"));
     }
 
     /**

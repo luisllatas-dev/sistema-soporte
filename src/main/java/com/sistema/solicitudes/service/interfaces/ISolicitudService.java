@@ -2,6 +2,7 @@ package com.sistema.solicitudes.service.interfaces;
 
 import java.util.List;
 
+import com.sistema.solicitudes.model.EstadoSolicitud;
 import com.sistema.solicitudes.model.Solicitud;
 
 /**
@@ -11,10 +12,11 @@ import com.sistema.solicitudes.model.Solicitud;
 public interface ISolicitudService {
 
     /**
-     * Obtiene todas las solicitudes registradas.
-     * @return lista de solicitudes
+     * Obtiene todas las solicitudes registradas, opcionalmente filtradas por estado.
+     * @param estado estado opcional de las solicitudes para filtrar (puede ser null)
+     * @return lista de solicitudes encontradas
      */
-    List<Solicitud> obtenerTodas();
+    List<Solicitud> obtenerTodas(EstadoSolicitud estado);
 
     /**
      * Obtiene una solicitud por su identificador.
@@ -37,6 +39,14 @@ public interface ISolicitudService {
      * @return la solicitud actualizada
      */
     Solicitud actualizar(Long id, Solicitud solicitud);
+
+    /**
+     * Actualiza únicamente el estado de una solicitud existente.
+     * @param id identificador de la solicitud
+     * @param estado nuevo estado a asignar
+     * @return la solicitud actualizada con el nuevo estado
+     */
+    Solicitud actualizarEstado(Long id, EstadoSolicitud estado);
 
     /**
      * Elimina una solicitud de soporte técnico.
