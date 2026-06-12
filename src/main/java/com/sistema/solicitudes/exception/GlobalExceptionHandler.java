@@ -1,6 +1,5 @@
 package com.sistema.solicitudes.exception;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.sistema.solicitudes.dto.ApiResponse;
 
 /**
  * Manejador global de excepciones para la API.
@@ -22,14 +23,8 @@ public class GlobalExceptionHandler {
      * Retorna HTTP 404 Not Found.
      */
     @ExceptionHandler(SolicitudNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleSolicitudNotFound(SolicitudNotFoundException ex) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                "No Encontrado",
-                ex.getMessage(),
-                null
-        );
+    public ResponseEntity<ApiResponse<Object>> handleSolicitudNotFound(SolicitudNotFoundException ex) {
+        ApiResponse<Object> error = ApiResponse.error(ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
@@ -38,19 +33,13 @@ public class GlobalExceptionHandler {
      * Retorna HTTP 400 Bad Request con detalle de cada campo inválido.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> details = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(fieldError ->
                 details.put(fieldError.getField(), fieldError.getDefaultMessage())
         );
 
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Error de Validación",
-                "Los datos enviados contienen errores",
-                details
-        );
+        ApiResponse<Object> error = ApiResponse.error("Los datos enviados contienen errores", details);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
@@ -59,14 +48,9 @@ public class GlobalExceptionHandler {
      * Retorna HTTP 500 Internal Server Error.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Error Interno del Servidor",
-                "Ocurrió un error inesperado: " + ex.getMessage(),
-                null
-        );
+    public ResponseEntity<ApiResponse<Object>> handleGeneralException(Exception ex) {
+        ApiResponse<Object> error = ApiResponse.error("Ocurrió un error inesperado: " + ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
+
