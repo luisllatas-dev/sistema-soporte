@@ -29,6 +29,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja excepciones cuando no se encuentra un cliente.
+     * Retorna HTTP 404 Not Found.
+     */
+    @ExceptionHandler(ClienteNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleClienteNotFound(ClienteNotFoundException ex) {
+        ApiResponse<Object> error = ApiResponse.error(ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Maneja excepciones cuando no se encuentra un técnico.
+     * Retorna HTTP 404 Not Found.
+     */
+    @ExceptionHandler(TecnicoNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleTecnicoNotFound(TecnicoNotFoundException ex) {
+        ApiResponse<Object> error = ApiResponse.error(ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    /**
      * Maneja errores de validación de los campos de entrada.
      * Retorna HTTP 400 Bad Request con detalle de cada campo inválido.
      */

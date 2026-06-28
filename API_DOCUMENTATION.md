@@ -1,6 +1,6 @@
 # 🛠️ API de Gestión de Solicitudes de Soporte Técnico
 
-Esta es la documentación oficial de la API REST para el sistema de solicitudes de soporte técnico. La API permite registrar, consultar, actualizar y eliminar solicitudes, asignando clientes y técnicos responsables.
+Esta es la documentación oficial de la API REST para el sistema de solicitudes de soporte técnico. La API permite registrar, consultar, actualizar y eliminar solicitudes, asignando clientes y técnicos responsables, persistiendo la información directamente en una base de datos relacional.
 
 ---
 
@@ -10,7 +10,7 @@ Esta es la documentación oficial de la API REST para el sistema de solicitudes 
   * Java 25
   * Spring Boot 4.0.6
   * Springdoc OpenAPI 2.8.8 (Swagger)
-  * Persistencia: Capa de Repositorio (`ISolicitudRepository` y `SolicitudRepositoryImpl`) con base de datos simulada en memoria (`LinkedHashMap` thread-safe).
+  * Persistencia: **Spring Data JPA** (`IClienteRepository`, `ITecnicoRepository`, `ISolicitudRepository`) con **MySQL Database**.
 * **Servidor Local:** `http://localhost:8080`
 * **Documentación Interactiva:**
   * **Swagger UI:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
@@ -18,61 +18,65 @@ Esta es la documentación oficial de la API REST para el sistema de solicitudes 
 
 ---
 
-## 📦 Modelos de Datos
+## 📦 Modelos de Datos (Entidades JPA)
 
-### 1. Solicitud
+### 1. Solicitud (`solicitudes`)
 Representa una solicitud de soporte técnico en el sistema.
 
-| Campo | Tipo | Validaciones | Descripción |
+| Campo | Tipo | Mapeo BD / Validaciones | Descripción |
 | :--- | :--- | :--- | :--- |
-| `id` | Long | - | Identificador único autogenerado. |
-| `descripcion` | String | `@NotBlank` | Descripción detallada del problema. |
-| `estado` | Enum | `@NotNull` | Estado actual de la solicitud (`ABIERTA`, `EN_PROCESO`, `CERRADA`). |
-| `fechaCreacion` | LocalDateTime | - | Fecha y hora en la que se creó la solicitud (autogenerada). |
-| `fechaActualizacion` | LocalDateTime | - | Fecha y hora de la última modificación (nulo inicialmente). |
-| `cliente` | Cliente | `@NotNull`, `@Valid` | Información del cliente que solicita el soporte. |
-| `tecnicoAsignado` | Tecnico | `@NotNull`, `@Valid` | Información del técnico asignado a la solicitud. |
+| `id` | Long | `PRIMARY KEY AUTO_INCREMENT` | Identificador único autogenerado en la base de datos. |
+| `descripcion` | String | `VARCHAR(255) NOT NULL`, `@NotBlank` | Descripción detallada del problema. |
+| `estado` | Enum | `VARCHAR(20) NOT NULL`, `@NotNull` | Estado actual (`ABIERTA`, `EN_PROCESO`, `CERRADA`). Se almacena como String. |
+| `fechaCreacion` | LocalDateTime | `DATETIME NOT NULL`, `updatable = false` | Fecha y hora en la que se creó la solicitud (autogenerada por `@PrePersist`). |
+| `fechaActualizacion` | LocalDateTime | `DATETIME NULL` | Fecha y hora de la última modificación (autogenerada por `@PreUpdate`). |
+| `cliente` | Cliente | `@ManyToOne`, `@JoinColumn(name = "cliente_id")` | Cliente que solicita el soporte. Relación requerida (`@NotNull`, `@Valid`). |
+| `tecnicoAsignado` | Tecnico | `@ManyToOne`, `@JoinColumn(name = "tecnico_id")` | Técnico asignado a la solicitud. Relación requerida (`@NotNull`, `@Valid`). |
 
-### 2. Cliente
+### 2. Cliente (`clientes`)
 Datos del cliente que reporta el problema.
 
-| Campo | Tipo | Validaciones | Descripción |
+| Campo | Tipo | Mapeo BD / Validaciones | Descripción |
 | :--- | :--- | :--- | :--- |
-| `id` | Long | - | Identificador único del cliente (autogenerado si se envía vacío). |
-| `nombre` | String | `@NotBlank` | Nombre completo del cliente. |
-| `correoElectronico` | String | `@NotBlank`, `@Email` | Correo electrónico de contacto del cliente. |
+| `id` | Long | `PRIMARY KEY AUTO_INCREMENT` | Identificador único del cliente. |
+| `nombre` | String | `VARCHAR(255) NOT NULL`, `@NotBlank` | Nombre completo del cliente. |
+| `correoElectronico` | String | `VARCHAR(255) NOT NULL UNIQUE`, `@Email` | Correo electrónico de contacto único. |
+| `fechaCreacion` | LocalDateTime | `DATETIME NOT NULL`, `updatable = false` | Registro de auditoría de creación. |
+| `fechaActualizacion` | LocalDateTime | `DATETIME NULL` | Registro de auditoría de actualizaciones. |
 
-### 3. Técnico
-Datos del especialista que resolverá el problema.
+### 3. Técnico (`tecnicos`)
+Datos del especialista asignado a resolver el problema.
 
-| Campo | Tipo | Validaciones | Descripción |
+| Campo | Tipo | Mapeo BD / Validaciones | Descripción |
 | :--- | :--- | :--- | :--- |
-| `id` | Long | - | Identificador único del técnico (autogenerado si se envía vacío). |
-| `nombre` | String | `@NotBlank` | Nombre completo del técnico. |
-| `especialidad` | String | `@NotBlank` | Especialidad técnica (ej. "Hardware", "Redes", etc.). |
+| `id` | Long | `PRIMARY KEY AUTO_INCREMENT` | Identificador único del técnico. |
+| `nombre` | String | `VARCHAR(255) NOT NULL`, `@NotBlank` | Nombre completo del técnico. |
+| `especialidad` | String | `VARCHAR(255) NOT NULL`, `@NotBlank` | Especialidad técnica (ej. "Hardware", "Redes"). |
+| `fechaCreacion` | LocalDateTime | `DATETIME NOT NULL`, `updatable = false` | Registro de auditoría de creación. |
+| `fechaActualizacion` | LocalDateTime | `DATETIME NULL` | Registro de auditoría de actualizaciones. |
 
 ### 4. ApiResponse (Envoltura Genérica)
-Estructura unificada de comunicación para todas las respuestas de la API.
+Estructura unificada de comunicación para todas las respuestas de la API (éxito y errores).
 
 | Campo | Tipo | Descripción |
 | :--- | :--- | :--- |
-| `success` | boolean | `true` si la operación se completó con éxito, `false` en caso de error o validación fallida. |
-| `message` | String | Mensaje explicativo para el usuario o desarrollador sobre el resultado. |
-| `data` | T (Genérico) | Datos de respuesta de negocio (será `null` en caso de error). |
-| `errors` | Object | Diccionario de errores detallados (usado en validaciones de campos fallidos). |
-| `timestamp` | LocalDateTime | Fecha y hora en la que se generó la respuesta en el servidor. |
+| `success` | boolean | `true` si la operación fue exitosa, `false` en caso de error. |
+| `message` | String | Descripción explicativa del resultado de la operación. |
+| `data` | T (Genérico) | Payload o datos devueltos por la API (será `null` en errores). |
+| `errors` | Object | Mapa de detalles de error (usado para validaciones de campo `@Valid`). |
+| `timestamp` | LocalDateTime | Estampa de tiempo de la respuesta del servidor. |
 
 ---
 
 ## 🛤️ Endpoints del API (`/api/solicitudes`)
 
 ### 1. Obtener todas las solicitudes
-Retorna una lista completa de todas las solicitudes registradas en memoria, opcionalmente filtradas por estado.
+Retorna una lista completa de todas las solicitudes de soporte técnico guardadas en la base de datos MySQL, permitiendo filtrado por estado.
 
 * **Método:** `GET`
 * **Ruta:** `/api/solicitudes`
-* **Parámetros de Consulta (Query Params - Opcional):**
-  * `estado` (Enum): Filtrar por el estado de la solicitud (`ABIERTA`, `EN_PROCESO`, `CERRADA`). Ej: `/api/solicitudes?estado=ABIERTA`
+* **Parámetros de Consulta (Opcional):**
+  * `estado` (Enum): Filtrar por `ABIERTA`, `EN_PROCESO`, o `CERRADA`. (ej. `/api/solicitudes?estado=ABIERTA`)
 * **Respuesta Exitosa (200 OK):**
   ```json
   {
@@ -83,43 +87,32 @@ Retorna una lista completa de todas las solicitudes registradas en memoria, opci
         "id": 1,
         "descripcion": "No hay conexión a internet en el área de contabilidad",
         "estado": "ABIERTA",
-        "fechaCreacion": "2026-06-08T19:45:00",
+        "fechaCreacion": "2026-06-27T16:55:19.177456103",
+        "fechaActualizacion": null,
         "cliente": {
           "id": 1,
           "nombre": "Carlos Mendoza",
-          "correoElectronico": "carlos.mendoza@email.com"
+          "correoElectronico": "carlos.mendoza@email.com",
+          "fechaCreacion": null,
+          "fechaActualizacion": null
         },
         "tecnicoAsignado": {
           "id": 1,
           "nombre": "Ana García",
-          "especialidad": "Redes y Conectividad"
-        }
-      },
-      {
-        "id": 2,
-        "descripcion": "La impresora del piso 3 no imprime correctamente",
-        "estado": "EN_PROCESO",
-        "fechaCreacion": "2026-06-06T19:45:00",
-        "cliente": {
-          "id": 2,
-          "nombre": "María López",
-          "correoElectronico": "maria.lopez@email.com"
-        },
-        "tecnicoAsignado": {
-          "id": 2,
-          "nombre": "Pedro Ruiz",
-          "especialidad": "Hardware"
+          "especialidad": "Redes y Conectividad",
+          "fechaCreacion": null,
+          "fechaActualizacion": null
         }
       }
     ],
-    "timestamp": "2026-06-12T14:11:47"
+    "timestamp": "2026-06-27T16:56:10.0040095"
   }
   ```
 
 ---
 
 ### 2. Buscar solicitud por ID
-Busca una única solicitud a partir de su ID y la retorna envuelta.
+Busca una única solicitud en la base de datos por su ID único.
 
 * **Método:** `GET`
 * **Ruta:** `/api/solicitudes/{id}`
@@ -134,49 +127,54 @@ Busca una única solicitud a partir de su ID y la retorna envuelta.
       "id": 1,
       "descripcion": "No hay conexión a internet en el área de contabilidad",
       "estado": "ABIERTA",
-      "fechaCreacion": "2026-06-08T19:45:00",
+      "fechaCreacion": "2026-06-27T16:55:19.177456103",
+      "fechaActualizacion": null,
       "cliente": {
         "id": 1,
         "nombre": "Carlos Mendoza",
-        "correoElectronico": "carlos.mendoza@email.com"
+        "correoElectronico": "carlos.mendoza@email.com",
+        "fechaCreacion": null,
+        "fechaActualizacion": null
       },
       "tecnicoAsignado": {
         "id": 1,
         "nombre": "Ana García",
-        "especialidad": "Redes y Conectividad"
+        "especialidad": "Redes y Conectividad",
+        "fechaCreacion": null,
+        "fechaActualizacion": null
       }
     },
-    "timestamp": "2026-06-12T14:12:00"
+    "timestamp": "2026-06-27T16:56:38.034924465"
   }
   ```
 * **Respuesta de Error (404 Not Found):**
   ```json
   {
     "success": false,
-    "message": "No se encontró la solicitud con ID: 99",
-    "timestamp": "2026-06-12T14:12:05"
+    "message": "No se encontró la solicitud con ID: 999",
+    "timestamp": "2026-06-27T16:57:19.792501722"
   }
   ```
 
 ---
 
 ### 3. Registrar una nueva solicitud
-Registra una solicitud en el sistema. Le asigna un ID, fecha de creación y la devuelve envuelta en el formato de éxito.
+Crea y persiste una nueva solicitud con sus relaciones de cliente y técnico en la base de datos.
 
 * **Método:** `POST`
 * **Ruta:** `/api/solicitudes`
 * **Cuerpo de la Petición (Request Body):**
   ```json
   {
-    "descripcion": "Fallo en el disco duro del servidor de desarrollo",
+    "descripcion": "Problema con el correo corporativo",
     "estado": "ABIERTA",
     "cliente": {
-      "nombre": "Roberto Santisteban",
-      "correoElectronico": "roberto.s@email.com"
+      "nombre": "Luis Llatas",
+      "correoElectronico": "luis@empresa.com"
     },
     "tecnicoAsignado": {
-      "nombre": "Pedro Ruiz",
-      "especialidad": "Hardware"
+      "nombre": "Sofia Torres",
+      "especialidad": "Software"
     }
   }
   ```
@@ -187,40 +185,48 @@ Registra una solicitud en el sistema. Le asigna un ID, fecha de creación y la d
     "message": "Solicitud creada exitosamente",
     "data": {
       "id": 4,
-      "descripcion": "Fallo en el disco duro del servidor de desarrollo",
+      "descripcion": "Problema con el correo corporativo",
       "estado": "ABIERTA",
-      "fechaCreacion": "2026-06-08T19:48:32.456",
+      "fechaCreacion": "2026-06-27T16:56:38.633001057",
+      "fechaActualizacion": null,
       "cliente": {
-        "id": 401,
-        "nombre": "Roberto Santisteban",
-        "correoElectronico": "roberto.s@email.com"
+        "id": 4,
+        "nombre": "Luis Llatas",
+        "correoElectronico": "luis@empresa.com",
+        "fechaCreacion": "2026-06-27T16:56:38.632900010",
+        "fechaActualizacion": null
       },
       "tecnicoAsignado": {
-        "id": 402,
-        "nombre": "Pedro Ruiz",
-        "especialidad": "Hardware"
+        "id": 4,
+        "nombre": "Sofia Torres",
+        "especialidad": "Software",
+        "fechaCreacion": "2026-06-27T16:56:38.632950020",
+        "fechaActualizacion": null
       }
     },
-    "timestamp": "2026-06-12T14:12:15"
+    "timestamp": "2026-06-27T16:56:38.633060876"
   }
   ```
-* **Respuesta de Error (400 Bad Request - Errores de Validación):**
+* **Respuesta de Error (400 Bad Request - Fallo de Validación):**
   ```json
   {
     "success": false,
     "message": "Los datos enviados contienen errores",
     "errors": {
+      "cliente.nombre": "El nombre del cliente es obligatorio",
       "descripcion": "La descripción de la solicitud es obligatoria",
-      "cliente.correoElectronico": "El correo electrónico debe tener un formato válido"
+      "cliente.correoElectronico": "El correo electrónico debe tener un formato válido",
+      "tecnicoAsignado.nombre": "El nombre del técnico es obligatorio",
+      "tecnicoAsignado.especialidad": "La especialidad del técnico es obligatoria"
     },
-    "timestamp": "2026-06-12T14:12:20"
+    "timestamp": "2026-06-27T16:57:29.949016732"
   }
   ```
 
 ---
 
 ### 4. Actualizar una solicitud existente
-Sobrescribe todos los campos de una solicitud existente según su ID. La respuesta exitosa se devuelve envuelta.
+Sobrescribe todos los campos de una solicitud existente buscando por su ID de ruta.
 
 * **Método:** `PUT`
 * **Ruta:** `/api/solicitudes/{id}`
@@ -229,17 +235,15 @@ Sobrescribe todos los campos de una solicitud existente según su ID. La respues
 * **Cuerpo de la Petición (Request Body):**
   ```json
   {
-    "descripcion": "No hay conexión a internet en el área de contabilidad - Resuelto provisionalmente con backup de 4G",
+    "descripcion": "Problema con el correo corporativo - URGENTE",
     "estado": "EN_PROCESO",
     "cliente": {
-      "id": 1,
-      "nombre": "Carlos Mendoza",
-      "correoElectronico": "carlos.mendoza@email.com"
+      "nombre": "Luis Llatas",
+      "correoElectronico": "luis@empresa.com"
     },
     "tecnicoAsignado": {
-      "id": 1,
-      "nombre": "Ana García",
-      "especialidad": "Redes y Conectividad"
+      "nombre": "Sofia Torres",
+      "especialidad": "Software"
     }
   }
   ```
@@ -249,39 +253,36 @@ Sobrescribe todos los campos de una solicitud existente según su ID. La respues
     "success": true,
     "message": "Solicitud actualizada exitosamente",
     "data": {
-      "id": 1,
-      "descripcion": "No hay conexión a internet en el área de contabilidad - Resuelto provisionalmente con backup de 4G",
+      "id": 4,
+      "descripcion": "Problema con el correo corporativo - URGENTE",
       "estado": "EN_PROCESO",
-      "fechaCreacion": "2026-06-08T19:45:00",
+      "fechaCreacion": "2026-06-27T16:56:38.633001057",
+      "fechaActualizacion": "2026-06-27T16:56:50.231061377",
       "cliente": {
-        "id": 1,
-        "nombre": "Carlos Mendoza",
-        "correoElectronico": "carlos.mendoza@email.com"
+        "id": 4,
+        "nombre": "Luis Llatas",
+        "correoElectronico": "luis@empresa.com",
+        "fechaCreacion": "2026-06-27T16:56:38.632900010",
+        "fechaActualizacion": "2026-06-27T16:56:50.230980110"
       },
       "tecnicoAsignado": {
-        "id": 1,
-        "nombre": "Ana García",
-        "especialidad": "Redes y Conectividad"
+        "id": 4,
+        "nombre": "Sofia Torres",
+        "especialidad": "Software",
+        "fechaCreacion": "2026-06-27T16:56:38.632950020",
+        "fechaActualizacion": "2026-06-27T16:56:50.231010040"
       }
     },
-    "timestamp": "2026-06-12T14:12:35"
-  }
-  ```
-* **Respuesta de Error (404 Not Found):**
-  ```json
-  {
-    "success": false,
-    "message": "No se encontró la solicitud con ID: 99",
-    "timestamp": "2026-06-12T14:12:40"
+    "timestamp": "2026-06-27T16:56:50.231101828"
   }
   ```
 
 ---
 
-### 5. Actualizar el estado de una solicitud
-Actualiza únicamente el estado (`ABIERTA`, `EN_PROCESO`, `CERRADA`) de una solicitud a partir de su ID y el estado especificado en la ruta.
+### 5. Actualizar parcialmente el estado de una solicitud
+Actualiza únicamente el estado (`ABIERTA`, `EN_PROCESO`, `CERRADA`) de una solicitud registrada.
 
-* **Método:** `PUT`
+* **Método:** `PATCH`
 * **Ruta:** `/api/solicitudes/{id}/estado/{estado}`
 * **Parámetros de Ruta:**
   * `id` (Long): Identificador de la solicitud.
@@ -295,35 +296,31 @@ Actualiza únicamente el estado (`ABIERTA`, `EN_PROCESO`, `CERRADA`) de una soli
       "id": 1,
       "descripcion": "No hay conexión a internet en el área de contabilidad",
       "estado": "EN_PROCESO",
-      "fechaCreacion": "2026-06-08T19:45:00",
-      "fechaActualizacion": "2026-06-12T16:35:10",
+      "fechaCreacion": "2026-06-27T16:55:19.177456103",
+      "fechaActualizacion": "2026-06-27T17:01:10.450302190",
       "cliente": {
         "id": 1,
         "nombre": "Carlos Mendoza",
-        "correoElectronico": "carlos.mendoza@email.com"
+        "correoElectronico": "carlos.mendoza@email.com",
+        "fechaCreacion": null,
+        "fechaActualizacion": null
       },
       "tecnicoAsignado": {
         "id": 1,
         "nombre": "Ana García",
-        "especialidad": "Redes y Conectividad"
+        "especialidad": "Redes y Conectividad",
+        "fechaCreacion": null,
+        "fechaActualizacion": null
       }
     },
-    "timestamp": "2026-06-12T16:35:10"
-  }
-  ```
-* **Respuesta de Error (404 Not Found):**
-  ```json
-  {
-    "success": false,
-    "message": "No se encontró la solicitud con ID: 99",
-    "timestamp": "2026-06-12T16:35:15"
+    "timestamp": "2026-06-27T17:01:10.451000980"
   }
   ```
 
 ---
 
 ### 6. Eliminar una solicitud
-Elimina del sistema una solicitud a partir de su ID. Devuelve una respuesta de éxito con `data` nulo en formato JSON.
+Elimina físicamente el registro de la solicitud en la base de datos.
 
 * **Método:** `DELETE`
 * **Ruta:** `/api/solicitudes/{id}`
@@ -335,15 +332,7 @@ Elimina del sistema una solicitud a partir de su ID. Devuelve una respuesta de �
     "success": true,
     "message": "Solicitud eliminada exitosamente",
     "data": null,
-    "timestamp": "2026-06-12T14:13:00"
-  }
-  ```
-* **Respuesta de Error (404 Not Found):**
-  ```json
-  {
-    "success": false,
-    "message": "No se encontró la solicitud con ID: 99",
-    "timestamp": "2026-06-12T14:13:05"
+    "timestamp": "2026-06-27T16:58:05.105432190"
   }
   ```
 
@@ -351,19 +340,8 @@ Elimina del sistema una solicitud a partir de su ID. Devuelve una respuesta de �
 
 ## ⚠️ Manejo de Errores Globales
 
-La API utiliza un controlador centralizado (`GlobalExceptionHandler`) para atrapar excepciones y transformarlas en una estructura estándar `ApiResponse` con la propiedad `success: false`:
+La API utiliza un controlador centralizado (`GlobalExceptionHandler`) para capturar las excepciones y estructurar los fallos del sistema bajo el mismo esquema de respuesta JSON de `ApiResponse` con `success: false`:
 
-```json
-{
-  "success": false,
-  "message": "Mensaje comprensible del error",
-  "errors": {
-    "campo_invalido": "Descripción detallada del fallo"
-  },
-  "timestamp": "Fecha y hora del error"
-}
-```
-
-* **Errores de Validación (400 Bad Request):** Ocurre cuando fallan restricciones como `@NotBlank`, `@Email` o `@NotNull` en peticiones `POST` o `PUT`. Los detalles se inyectan en `errors`.
-* **Recurso No Encontrado (404 Not Found):** Ocurre cuando se busca, edita o elimina una solicitud con un ID inexistente. El campo `errors` permanece ausente/nulo.
-* **Errores Internos (500 Internal Server Error):** Captura cualquier excepción imprevista en el sistema.
+* **Errores de Validación (400 Bad Request):** Ocurre cuando un campo del request body marcado con anotaciones (`@NotBlank`, `@Email`, `@NotNull`) no cumple con las reglas. Los campos fallidos y sus mensajes correspondientes se detallan bajo la propiedad `"errors"`.
+* **Recurso No Encontrado (404 Not Found):** Lanzado cuando se intenta buscar, actualizar o eliminar registros por IDs de Cliente, Técnico o Solicitud que no existen en MySQL.
+* **Error de Servidor (500 Internal Server Error):** Captura cualquier fallo inesperado del servidor MySQL o código de negocio.

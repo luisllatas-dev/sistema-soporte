@@ -1,38 +1,21 @@
 package com.sistema.solicitudes.repository;
 
 import java.util.List;
-import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.sistema.solicitudes.model.EstadoSolicitud;
 import com.sistema.solicitudes.model.Solicitud;
 
 /**
- * Interfaz del repositorio de solicitudes.
- * Define las operaciones básicas de acceso a datos.
+ * Repositorio JPA para la entidad Solicitud.
+ * Spring Data JPA genera la implementación automáticamente.
  */
-public interface ISolicitudRepository {
+public interface ISolicitudRepository extends JpaRepository<Solicitud, Long> {
 
     /**
-     * Obtiene todas las solicitudes del repositorio.
+     * Busca solicitudes filtradas por estado.
+     * Spring Data JPA genera la query automáticamente a partir del nombre del método.
      */
-    List<Solicitud> obtenerTodas();
-
-    /**
-     * Obtiene una solicitud por su ID.
-     */
-    Optional<Solicitud> obtenerPorId(Long id);
-
-    /**
-     * Guarda (crea o actualiza) una solicitud.
-     */
-    Solicitud guardar(Solicitud solicitud);
-
-    /**
-     * Elimina una solicitud por su ID.
-     */
-    void eliminar(Long id);
-
-    /**
-     * Verifica si existe una solicitud con el ID dado.
-     */
-    boolean existe(Long id);
+    List<Solicitud> findByEstado(EstadoSolicitud estado);
 }

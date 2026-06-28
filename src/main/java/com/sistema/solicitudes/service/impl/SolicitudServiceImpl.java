@@ -1,7 +1,5 @@
 package com.sistema.solicitudes.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -14,7 +12,7 @@ import com.sistema.solicitudes.service.interfaces.ISolicitudService;
 
 /**
  * Implementación del servicio de solicitudes de soporte técnico.
- * Delega la persistencia de datos a la capa de repositorio.
+ * Delega la persistencia de datos a la capa de repositorio JPA.
  */
 @Service
 public class SolicitudServiceImpl implements ISolicitudService {
@@ -30,43 +28,21 @@ public class SolicitudServiceImpl implements ISolicitudService {
 
     @Override
     public List<Solicitud> obtenerTodas(EstadoSolicitud estado) {
-        List<Solicitud> listaCompleta = solicitudRepository.obtenerTodas();
         if (estado == null) {
-            return listaCompleta;
+            return solicitudRepository.findAll();
         }
-        List<Solicitud> filtrada = new ArrayList<>();
-        for (Solicitud s : listaCompleta) {
-            if (s.getEstado() == estado) {
-                filtrada.add(s);
-            }
-        }
-        return filtrada;
+        return solicitudRepository.findByEstado(estado);
     }
 
     @Override
     public Solicitud obtenerPorId(Long id) {
-        return solicitudRepository.obtenerPorId(id)
+        return solicitudRepository.findById(id)
                 .orElseThrow(() -> new SolicitudNotFoundException(id));
     }
 
     @Override
     public Solicitud crear(Solicitud solicitud) {
-        solicitud.setFechaCreacion(LocalDateTime.now());
-        
-        // Guardamos la solicitud temporalmente para que el repositorio le asigne un ID
-        Solicitud guardada = solicitudRepository.guardar(solicitud);
-        Long id = guardada.getId();
-
-        // Asignar IDs a cliente y técnico si no los tienen, basándonos en el ID de la solicitud
-        if (solicitud.getCliente().getId() == null) {
-            solicitud.getCliente().setId(id * 100 + 1);
-        }
-        if (solicitud.getTecnicoAsignado().getId() == null) {
-            solicitud.getTecnicoAsignado().setId(id * 100 + 2);
-        }
-
-        // Volvemos a guardar para persistir los IDs del cliente/técnico asignados
-        return solicitudRepository.guardar(solicitud);
+        return solicitudRepository.save(solicitud);
     }
 
     @Override
@@ -74,25 +50,21 @@ public class SolicitudServiceImpl implements ISolicitudService {
         Solicitud existente = obtenerPorId(id); // Lanza excepción si no existe
         solicitud.setId(id);
         solicitud.setFechaCreacion(existente.getFechaCreacion());
-        solicitud.setFechaActualizacion(LocalDateTime.now());
-
-        return solicitudRepository.guardar(solicitud);
+        return solicitudRepository.save(solicitud);
     }
 
     @Override
     public Solicitud actualizarEstado(Long id, EstadoSolicitud estado) {
         Solicitud existente = obtenerPorId(id); // Lanza excepción si no existe
         existente.setEstado(estado);
-        existente.setFechaActualizacion(LocalDateTime.now());
-        
-        return solicitudRepository.guardar(existente);
+        return solicitudRepository.save(existente);
     }
 
     @Override
     public void eliminar(Long id) {
-        if (!solicitudRepository.existe(id)) {
+        if (!solicitudRepository.existsById(id)) {
             throw new SolicitudNotFoundException(id);
         }
-        solicitudRepository.eliminar(id);
+        solicitudRepository.deleteById(id);
     }
 }
