@@ -14,15 +14,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Modelo principal que representa una solicitud de soporte técnico.
+ * Entidad JPA que representa una solicitud de soporte técnico.
  */
 @Data
 @NoArgsConstructor
@@ -35,11 +32,9 @@ public class Solicitud {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "La descripción de la solicitud es obligatoria")
     @Column(name = "descripcion", nullable = false)
     private String descripcion;
 
-    @NotNull(message = "El estado de la solicitud es obligatorio")
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
     private EstadoSolicitud estado;
@@ -50,14 +45,10 @@ public class Solicitud {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
-    @NotNull(message = "El cliente es obligatorio")
-    @Valid
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @NotNull(message = "El técnico asignado es obligatorio")
-    @Valid
     @ManyToOne
     @JoinColumn(name = "tecnico_id", nullable = false)
     private Tecnico tecnicoAsignado;

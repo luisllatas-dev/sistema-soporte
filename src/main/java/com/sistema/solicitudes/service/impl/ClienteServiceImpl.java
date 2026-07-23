@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.sistema.solicitudes.dto.ClienteRequestDTO;
 import com.sistema.solicitudes.exception.ClienteNotFoundException;
 import com.sistema.solicitudes.model.Cliente;
 import com.sistema.solicitudes.repository.IClienteRepository;
@@ -11,7 +12,7 @@ import com.sistema.solicitudes.service.interfaces.IClienteService;
 
 /**
  * Implementación del servicio de clientes.
- * Delega la persistencia de datos a la capa de repositorio JPA.
+ * Recibe DTOs de entrada y los convierte a entidades JPA para persistencia.
  */
 @Service
 public class ClienteServiceImpl implements IClienteService {
@@ -37,16 +38,19 @@ public class ClienteServiceImpl implements IClienteService {
     }
 
     @Override
-    public Cliente crear(Cliente cliente) {
+    public Cliente crear(ClienteRequestDTO dto) {
+        Cliente cliente = new Cliente();
+        cliente.setNombre(dto.getNombre());
+        cliente.setCorreoElectronico(dto.getCorreoElectronico());
         return clienteRepository.save(cliente);
     }
 
     @Override
-    public Cliente actualizar(Long id, Cliente cliente) {
-        Cliente existente = obtenerPorId(id); // Lanza ClienteNotFoundException si no existe
-        cliente.setId(id);
-        cliente.setFechaCreacion(existente.getFechaCreacion());
-        return clienteRepository.save(cliente);
+    public Cliente actualizar(Long id, ClienteRequestDTO dto) {
+        Cliente existente = obtenerPorId(id);
+        existente.setNombre(dto.getNombre());
+        existente.setCorreoElectronico(dto.getCorreoElectronico());
+        return clienteRepository.save(existente);
     }
 
     @Override

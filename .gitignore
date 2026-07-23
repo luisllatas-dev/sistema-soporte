@@ -49,3 +49,4 @@ $RECYCLE.BIN/
 ### JVM crash logs ###
 hs_err_pid*
 
+TEST_REPORT.md

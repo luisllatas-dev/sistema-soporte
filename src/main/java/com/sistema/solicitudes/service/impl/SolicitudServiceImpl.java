@@ -4,26 +4,39 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.sistema.solicitudes.dto.SolicitudRequestDTO;
+import com.sistema.solicitudes.exception.ClienteNotFoundException;
 import com.sistema.solicitudes.exception.SolicitudNotFoundException;
+import com.sistema.solicitudes.exception.TecnicoNotFoundException;
+import com.sistema.solicitudes.model.Cliente;
 import com.sistema.solicitudes.model.EstadoSolicitud;
 import com.sistema.solicitudes.model.Solicitud;
+import com.sistema.solicitudes.model.Tecnico;
+import com.sistema.solicitudes.repository.IClienteRepository;
 import com.sistema.solicitudes.repository.ISolicitudRepository;
+import com.sistema.solicitudes.repository.ITecnicoRepository;
 import com.sistema.solicitudes.service.interfaces.ISolicitudService;
 
 /**
  * Implementación del servicio de solicitudes de soporte técnico.
- * Delega la persistencia de datos a la capa de repositorio JPA.
+ * Recibe DTOs de entrada, resuelve las relaciones por ID y persiste mediante JPA.
  */
 @Service
 public class SolicitudServiceImpl implements ISolicitudService {
 
     private final ISolicitudRepository solicitudRepository;
+    private final IClienteRepository clienteRepository;
+    private final ITecnicoRepository tecnicoRepository;
 
     /**
-     * Constructor con inyección de dependencias del repositorio.
+     * Constructor con inyección de dependencias de los repositorios.
      */
-    public SolicitudServiceImpl(ISolicitudRepository solicitudRepository) {
+    public SolicitudServiceImpl(ISolicitudRepository solicitudRepository,
+                                 IClienteRepository clienteRepository,
+                                 ITecnicoRepository tecnicoRepository) {
         this.solicitudRepository = solicitudRepository;
+        this.clienteRepository = clienteRepository;
+        this.tecnicoRepository = tecnicoRepository;
     }
 
     @Override
@@ -41,21 +54,41 @@ public class SolicitudServiceImpl implements ISolicitudService {
     }
 
     @Override
-    public Solicitud crear(Solicitud solicitud) {
+    public Solicitud crear(SolicitudRequestDTO dto) {
+        Cliente cliente = clienteRepository.findById(dto.getClienteId())
+                .orElseThrow(() -> new ClienteNotFoundException(dto.getClienteId()));
+        Tecnico tecnico = tecnicoRepository.findById(dto.getTecnicoAsignadoId())
+                .orElseThrow(() -> new TecnicoNotFoundException(dto.getTecnicoAsignadoId()));
+
+        Solicitud solicitud = new Solicitud();
+        solicitud.setDescripcion(dto.getDescripcion());
+        solicitud.setEstado(dto.getEstado());
+        solicitud.setCliente(cliente);
+        solicitud.setTecnicoAsignado(tecnico);
+
         return solicitudRepository.save(solicitud);
     }
 
     @Override
-    public Solicitud actualizar(Long id, Solicitud solicitud) {
-        Solicitud existente = obtenerPorId(id); // Lanza excepción si no existe
-        solicitud.setId(id);
-        solicitud.setFechaCreacion(existente.getFechaCreacion());
-        return solicitudRepository.save(solicitud);
+    public Solicitud actualizar(Long id, SolicitudRequestDTO dto) {
+        Solicitud existente = obtenerPorId(id);
+
+        Cliente cliente = clienteRepository.findById(dto.getClienteId())
+                .orElseThrow(() -> new ClienteNotFoundException(dto.getClienteId()));
+        Tecnico tecnico = tecnicoRepository.findById(dto.getTecnicoAsignadoId())
+                .orElseThrow(() -> new TecnicoNotFoundException(dto.getTecnicoAsignadoId()));
+
+        existente.setDescripcion(dto.getDescripcion());
+        existente.setEstado(dto.getEstado());
+        existente.setCliente(cliente);
+        existente.setTecnicoAsignado(tecnico);
+
+        return solicitudRepository.save(existente);
     }
 
     @Override
     public Solicitud actualizarEstado(Long id, EstadoSolicitud estado) {
-        Solicitud existente = obtenerPorId(id); // Lanza excepción si no existe
+        Solicitud existente = obtenerPorId(id);
         existente.setEstado(estado);
         return solicitudRepository.save(existente);
     }

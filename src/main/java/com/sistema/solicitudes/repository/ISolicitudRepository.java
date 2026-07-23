@@ -18,4 +18,6 @@ public interface ISolicitudRepository extends JpaRepository<Solicitud, Long> {
      * Spring Data JPA genera la query automáticamente a partir del nombre del método.
      */
     List<Solicitud> findByEstado(EstadoSolicitud estado);
+
+    
 }

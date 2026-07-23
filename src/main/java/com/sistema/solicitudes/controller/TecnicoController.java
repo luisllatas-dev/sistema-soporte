@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.sistema.solicitudes.dto.ApiResponse;
+import com.sistema.solicitudes.dto.TecnicoRequestDTO;
 import com.sistema.solicitudes.model.Tecnico;
 import com.sistema.solicitudes.service.interfaces.ITecnicoService;
 
@@ -44,8 +45,8 @@ public class TecnicoController {
      * Registra un nuevo técnico.
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Tecnico>> crear(@Valid @RequestBody Tecnico tecnico) {
-        Tecnico nuevo = tecnicoService.crear(tecnico);
+    public ResponseEntity<ApiResponse<Tecnico>> crear(@Valid @RequestBody TecnicoRequestDTO dto) {
+        Tecnico nuevo = tecnicoService.crear(dto);
         return new ResponseEntity<>(ApiResponse.success(nuevo, "Técnico creado exitosamente"), HttpStatus.CREATED);
     }
 
@@ -53,8 +54,8 @@ public class TecnicoController {
      * Actualiza la información de un técnico.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Tecnico>> actualizar(@PathVariable Long id, @Valid @RequestBody Tecnico tecnico) {
-        Tecnico actualizado = tecnicoService.actualizar(id, tecnico);
+    public ResponseEntity<ApiResponse<Tecnico>> actualizar(@PathVariable Long id, @Valid @RequestBody TecnicoRequestDTO dto) {
+        Tecnico actualizado = tecnicoService.actualizar(id, dto);
         return ResponseEntity.ok(ApiResponse.success(actualizado, "Técnico actualizado exitosamente"));
     }
 

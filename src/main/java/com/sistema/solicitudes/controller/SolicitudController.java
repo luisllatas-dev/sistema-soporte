@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sistema.solicitudes.dto.ApiResponse;
+import com.sistema.solicitudes.dto.SolicitudRequestDTO;
 import com.sistema.solicitudes.model.EstadoSolicitud;
 import com.sistema.solicitudes.model.Solicitud;
 import com.sistema.solicitudes.service.interfaces.ISolicitudService;
@@ -74,14 +75,15 @@ public class SolicitudController {
      * Registra una nueva solicitud de soporte técnico.
      */
     @Operation(summary = "Registrar nueva solicitud",
-               description = "Crea y registra una nueva solicitud de soporte técnico en el sistema")
+               description = "Crea y registra una nueva solicitud de soporte técnico referenciando cliente y técnico por ID")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Solicitud creada exitosamente"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Cliente o técnico no encontrado")
     })
     @PostMapping
-    public ResponseEntity<ApiResponse<Solicitud>> crear(@Valid @RequestBody Solicitud solicitud) {
-        Solicitud nueva = solicitudService.crear(solicitud);
+    public ResponseEntity<ApiResponse<Solicitud>> crear(@Valid @RequestBody SolicitudRequestDTO dto) {
+        Solicitud nueva = solicitudService.crear(dto);
         return new ResponseEntity<>(ApiResponse.success(nueva, "Solicitud creada exitosamente"), HttpStatus.CREATED);
     }
 
@@ -93,12 +95,12 @@ public class SolicitudController {
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Solicitud actualizada exitosamente"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud, cliente o técnico no encontrado")
     })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Solicitud>> actualizar(@PathVariable Long id,
-                                                             @Valid @RequestBody Solicitud solicitud) {
-        Solicitud actualizada = solicitudService.actualizar(id, solicitud);
+                                                             @Valid @RequestBody SolicitudRequestDTO dto) {
+        Solicitud actualizada = solicitudService.actualizar(id, dto);
         return ResponseEntity.ok(ApiResponse.success(actualizada, "Solicitud actualizada exitosamente"));
     }
 
@@ -109,7 +111,6 @@ public class SolicitudController {
                description = "Actualiza el estado de una solicitud de soporte técnico según su ID y el nuevo estado especificado")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Estado actualizado exitosamente"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
     })
     @PatchMapping("/{id}/estado/{estado}")
@@ -126,7 +127,7 @@ public class SolicitudController {
     @Operation(summary = "Eliminar solicitud",
                description = "Elimina una solicitud de soporte técnico del sistema según su ID")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "Solicitud eliminada exitosamente"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Solicitud eliminada exitosamente"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
     })
     @DeleteMapping("/{id}")
@@ -135,4 +136,3 @@ public class SolicitudController {
         return ResponseEntity.ok(ApiResponse.success(null, "Solicitud eliminada exitosamente"));
     }
 }
-

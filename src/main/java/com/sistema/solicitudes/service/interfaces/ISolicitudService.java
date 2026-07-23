@@ -2,6 +2,7 @@ package com.sistema.solicitudes.service.interfaces;
 
 import java.util.List;
 
+import com.sistema.solicitudes.dto.SolicitudRequestDTO;
 import com.sistema.solicitudes.model.EstadoSolicitud;
 import com.sistema.solicitudes.model.Solicitud;
 
@@ -27,18 +28,18 @@ public interface ISolicitudService {
 
     /**
      * Registra una nueva solicitud de soporte técnico.
-     * @param solicitud datos de la nueva solicitud
+     * @param dto datos de entrada con IDs de cliente y técnico
      * @return la solicitud creada con su ID asignado
      */
-    Solicitud crear(Solicitud solicitud);
+    Solicitud crear(SolicitudRequestDTO dto);
 
     /**
      * Actualiza la información de una solicitud existente.
      * @param id identificador de la solicitud a actualizar
-     * @param solicitud datos actualizados
+     * @param dto datos actualizados con IDs de cliente y técnico
      * @return la solicitud actualizada
      */
-    Solicitud actualizar(Long id, Solicitud solicitud);
+    Solicitud actualizar(Long id, SolicitudRequestDTO dto);
 
     /**
      * Actualiza únicamente el estado de una solicitud existente.

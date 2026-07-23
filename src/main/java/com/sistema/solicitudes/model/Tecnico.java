@@ -10,13 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Modelo que representa a un técnico asignado a una solicitud de soporte.
+ * Entidad JPA que representa a un técnico asignado a una solicitud de soporte.
  */
 @Data
 @NoArgsConstructor
@@ -29,11 +28,9 @@ public class Tecnico {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El nombre del técnico es obligatorio")
     @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @NotBlank(message = "La especialidad del técnico es obligatoria")
     @Column(name = "especialidad", nullable = false)
     private String especialidad;
 

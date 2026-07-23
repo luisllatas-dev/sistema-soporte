@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.sistema.solicitudes.dto.ApiResponse;
+import com.sistema.solicitudes.dto.ClienteRequestDTO;
 import com.sistema.solicitudes.model.Cliente;
 import com.sistema.solicitudes.service.interfaces.IClienteService;
 
@@ -44,8 +45,8 @@ public class ClienteController {
      * Registra un nuevo cliente.
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Cliente>> crear(@Valid @RequestBody Cliente cliente) {
-        Cliente nuevo = clienteService.crear(cliente);
+    public ResponseEntity<ApiResponse<Cliente>> crear(@Valid @RequestBody ClienteRequestDTO dto) {
+        Cliente nuevo = clienteService.crear(dto);
         return new ResponseEntity<>(ApiResponse.success(nuevo, "Cliente creado exitosamente"), HttpStatus.CREATED);
     }
 
@@ -53,9 +54,9 @@ public class ClienteController {
      * Actualiza la información de un cliente.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Cliente>> actualizar(@PathVariable Long id, @Valid @RequestBody Cliente cliente) {
-        Cliente actualizada = clienteService.actualizar(id, cliente);
-        return ResponseEntity.ok(ApiResponse.success(actualizada, "Cliente actualizado exitosamente"));
+    public ResponseEntity<ApiResponse<Cliente>> actualizar(@PathVariable Long id, @Valid @RequestBody ClienteRequestDTO dto) {
+        Cliente actualizado = clienteService.actualizar(id, dto);
+        return ResponseEntity.ok(ApiResponse.success(actualizado, "Cliente actualizado exitosamente"));
     }
 
     /**

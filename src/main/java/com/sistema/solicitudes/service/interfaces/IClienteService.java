@@ -2,6 +2,7 @@ package com.sistema.solicitudes.service.interfaces;
 
 import java.util.List;
 
+import com.sistema.solicitudes.dto.ClienteRequestDTO;
 import com.sistema.solicitudes.model.Cliente;
 
 public interface IClienteService {
@@ -10,9 +11,9 @@ public interface IClienteService {
 
     Cliente obtenerPorId(Long id);
 
-    Cliente crear(Cliente cliente);
+    Cliente crear(ClienteRequestDTO dto);
 
-    Cliente actualizar(Long id, Cliente cliente);
+    Cliente actualizar(Long id, ClienteRequestDTO dto);
 
     void eliminar(Long id);
 }
