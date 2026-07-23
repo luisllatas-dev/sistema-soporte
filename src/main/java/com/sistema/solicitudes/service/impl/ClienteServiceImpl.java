@@ -12,16 +12,12 @@ import com.sistema.solicitudes.service.interfaces.IClienteService;
 
 /**
  * Implementación del servicio de clientes.
- * Recibe DTOs de entrada y los convierte a entidades JPA para persistencia.
  */
 @Service
 public class ClienteServiceImpl implements IClienteService {
 
     private final IClienteRepository clienteRepository;
 
-    /**
-     * Constructor con inyección de dependencias del repositorio.
-     */
     public ClienteServiceImpl(IClienteRepository clienteRepository) {
         this.clienteRepository = clienteRepository;
     }
@@ -59,5 +55,13 @@ public class ClienteServiceImpl implements IClienteService {
             throw new ClienteNotFoundException(id);
         }
         clienteRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Cliente> buscarPorNombre(String nombre) {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            return clienteRepository.findAll();
+        }
+        return clienteRepository.findByNombreContainingIgnoreCase(nombre);
     }
 }

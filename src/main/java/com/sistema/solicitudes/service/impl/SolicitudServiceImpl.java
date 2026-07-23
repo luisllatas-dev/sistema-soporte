@@ -28,9 +28,6 @@ public class SolicitudServiceImpl implements ISolicitudService {
     private final IClienteRepository clienteRepository;
     private final ITecnicoRepository tecnicoRepository;
 
-    /**
-     * Constructor con inyección de dependencias de los repositorios.
-     */
     public SolicitudServiceImpl(ISolicitudRepository solicitudRepository,
                                  IClienteRepository clienteRepository,
                                  ITecnicoRepository tecnicoRepository) {
@@ -99,5 +96,26 @@ public class SolicitudServiceImpl implements ISolicitudService {
             throw new SolicitudNotFoundException(id);
         }
         solicitudRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Solicitud> obtenerPorCliente(Long clienteId) {
+        if (!clienteRepository.existsById(clienteId)) {
+            throw new ClienteNotFoundException(clienteId);
+        }
+        return solicitudRepository.findByClienteId(clienteId);
+    }
+
+    @Override
+    public List<Solicitud> obtenerPorTecnico(Long tecnicoId) {
+        if (!tecnicoRepository.existsById(tecnicoId)) {
+            throw new TecnicoNotFoundException(tecnicoId);
+        }
+        return solicitudRepository.findByTecnicoAsignadoId(tecnicoId);
+    }
+
+    @Override
+    public List<Solicitud> buscarPorDescripcion(String texto) {
+        return solicitudRepository.findByDescripcionContainingIgnoreCase(texto);
     }
 }

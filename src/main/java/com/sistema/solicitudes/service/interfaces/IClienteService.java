@@ -16,4 +16,9 @@ public interface IClienteService {
     Cliente actualizar(Long id, ClienteRequestDTO dto);
 
     void eliminar(Long id);
+
+    /**
+     * Busca clientes filtrando por nombre opcionalmente.
+     */
+    List<Cliente> buscarPorNombre(String nombre);
 }

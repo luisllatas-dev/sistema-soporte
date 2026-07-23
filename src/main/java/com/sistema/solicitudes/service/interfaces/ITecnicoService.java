@@ -16,4 +16,9 @@ public interface ITecnicoService {
     Tecnico actualizar(Long id, TecnicoRequestDTO dto);
 
     void eliminar(Long id);
+
+    /**
+     * Busca técnicos por especialidad u opcionalmente por nombre.
+     */
+    List<Tecnico> buscarPorFiltros(String especialidad, String nombre);
 }

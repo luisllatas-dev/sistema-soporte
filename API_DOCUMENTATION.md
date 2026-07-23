@@ -85,24 +85,17 @@ Controller (@Valid DTO) → Service (DTO → Entity) → Repository (Entity) →
 | `fechaCreacion` | LocalDateTime | `DATETIME NOT NULL` | Auditoría de creación. |
 | `fechaActualizacion` | LocalDateTime | `DATETIME NULL` | Auditoría de actualización. |
 
-### ApiResponse (Envoltura Genérica)
-| Campo | Tipo | Descripción |
-| :--- | :--- | :--- |
-| `success` | boolean | `true` si la operación fue exitosa. |
-| `message` | String | Descripción del resultado. |
-| `data` | T (Genérico) | Payload de respuesta (`null` en errores). |
-| `errors` | Object | Mapa de errores de validación. |
-| `timestamp` | LocalDateTime | Estampa de tiempo del servidor. |
-
 ---
 
 ## 🛤️ Endpoints
 
 ### Clientes (`/api/clientes`)
 
-#### 1. Listar todos los clientes
+#### 1. Listar / Buscar clientes por Nombre
 * **Método:** `GET`
 * **Ruta:** `/api/clientes`
+* **Parámetros de Consulta (Opcional):**
+  * `nombre` (String): Filtrar por coincidencia en el nombre (ej. `/api/clientes?nombre=Jose`).
 
 #### 2. Buscar cliente por ID
 * **Método:** `GET`
@@ -111,32 +104,10 @@ Controller (@Valid DTO) → Service (DTO → Entity) → Repository (Entity) →
 #### 3. Crear un cliente
 * **Método:** `POST`
 * **Ruta:** `/api/clientes`
-* **Request Body:**
-  ```json
-  {
-    "nombre": "Carlos Mendoza",
-    "correoElectronico": "carlos@email.com"
-  }
-  ```
-* **Respuesta (201 Created):**
-  ```json
-  {
-    "success": true,
-    "message": "Cliente creado exitosamente",
-    "data": {
-      "id": 1,
-      "nombre": "Carlos Mendoza",
-      "correoElectronico": "carlos@email.com",
-      "fechaCreacion": "2026-07-22T23:30:00",
-      "fechaActualizacion": null
-    }
-  }
-  ```
 
 #### 4. Actualizar un cliente
 * **Método:** `PUT`
 * **Ruta:** `/api/clientes/{id}`
-* **Request Body:** Igual que POST.
 
 #### 5. Eliminar un cliente
 * **Método:** `DELETE`
@@ -146,9 +117,12 @@ Controller (@Valid DTO) → Service (DTO → Entity) → Repository (Entity) →
 
 ### Técnicos (`/api/tecnicos`)
 
-#### 1. Listar todos los técnicos
+#### 1. Listar / Filtrar técnicos por Especialidad o Nombre
 * **Método:** `GET`
 * **Ruta:** `/api/tecnicos`
+* **Parámetros de Consulta (Opcional):**
+  * `especialidad` (String): Filtrar por especialidad (ej. `/api/tecnicos?especialidad=Redes`).
+  * `nombre` (String): Filtrar por coincidencia en el nombre (ej. `/api/tecnicos?nombre=Ana`).
 
 #### 2. Buscar técnico por ID
 * **Método:** `GET`
@@ -157,32 +131,10 @@ Controller (@Valid DTO) → Service (DTO → Entity) → Repository (Entity) →
 #### 3. Crear un técnico
 * **Método:** `POST`
 * **Ruta:** `/api/tecnicos`
-* **Request Body:**
-  ```json
-  {
-    "nombre": "Ana García",
-    "especialidad": "Redes y Conectividad"
-  }
-  ```
-* **Respuesta (201 Created):**
-  ```json
-  {
-    "success": true,
-    "message": "Técnico creado exitosamente",
-    "data": {
-      "id": 1,
-      "nombre": "Ana García",
-      "especialidad": "Redes y Conectividad",
-      "fechaCreacion": "2026-07-22T23:30:00",
-      "fechaActualizacion": null
-    }
-  }
-  ```
 
 #### 4. Actualizar un técnico
 * **Método:** `PUT`
 * **Ruta:** `/api/tecnicos/{id}`
-* **Request Body:** Igual que POST.
 
 #### 5. Eliminar un técnico
 * **Método:** `DELETE`
@@ -198,42 +150,29 @@ Controller (@Valid DTO) → Service (DTO → Entity) → Repository (Entity) →
 * **Parámetros de Consulta (Opcional):**
   * `estado`: Filtrar por `ABIERTA`, `EN_PROCESO`, o `CERRADA`.
 
-#### 2. Buscar solicitud por ID
+#### 2. Buscar solicitudes por Cliente
+* **Método:** `GET`
+* **Ruta:** `/api/solicitudes/cliente/{clienteId}`
+* **Descripción:** Retorna el historial completo de solicitudes creadas por un cliente.
+
+#### 3. Buscar solicitudes por Técnico
+* **Método:** `GET`
+* **Ruta:** `/api/solicitudes/tecnico/{tecnicoId}`
+* **Descripción:** Retorna la lista de solicitudes asignadas a un técnico.
+
+#### 4. Buscar solicitudes por texto de descripción
+* **Método:** `GET`
+* **Ruta:** `/api/solicitudes/buscar?texto={texto}`
+* **Descripción:** Busca coincidencia de texto dentro de la descripción del problema (case-insensitive).
+
+#### 5. Buscar solicitud por ID
 * **Método:** `GET`
 * **Ruta:** `/api/solicitudes/{id}`
-* **Respuesta (200 OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Solicitud encontrada exitosamente",
-    "data": {
-      "id": 1,
-      "descripcion": "No hay conexión a internet",
-      "estado": "ABIERTA",
-      "fechaCreacion": "2026-07-22T23:30:00",
-      "fechaActualizacion": null,
-      "cliente": {
-        "id": 1,
-        "nombre": "Carlos Mendoza",
-        "correoElectronico": "carlos@email.com",
-        "fechaCreacion": "2026-07-22T23:28:00",
-        "fechaActualizacion": null
-      },
-      "tecnicoAsignado": {
-        "id": 1,
-        "nombre": "Ana García",
-        "especialidad": "Redes y Conectividad",
-        "fechaCreacion": "2026-07-22T23:29:00",
-        "fechaActualizacion": null
-      }
-    }
-  }
-  ```
 
-#### 3. Crear una solicitud
+#### 6. Crear una solicitud
 * **Método:** `POST`
 * **Ruta:** `/api/solicitudes`
-* **Request Body (solo IDs):**
+* **Request Body:**
   ```json
   {
     "descripcion": "No hay conexión a internet en contabilidad",
@@ -242,69 +181,15 @@ Controller (@Valid DTO) → Service (DTO → Entity) → Repository (Entity) →
     "tecnicoAsignadoId": 1
   }
   ```
-  > **Nota:** El cliente y técnico deben existir previamente. Si el ID no existe, se retorna 404.
 
-* **Respuesta (201 Created):**
-  ```json
-  {
-    "success": true,
-    "message": "Solicitud creada exitosamente",
-    "data": {
-      "id": 1,
-      "descripcion": "No hay conexión a internet en contabilidad",
-      "estado": "ABIERTA",
-      "fechaCreacion": "2026-07-22T23:30:00",
-      "fechaActualizacion": null,
-      "cliente": {
-        "id": 1,
-        "nombre": "Carlos Mendoza",
-        "correoElectronico": "carlos@email.com"
-      },
-      "tecnicoAsignado": {
-        "id": 1,
-        "nombre": "Ana García",
-        "especialidad": "Redes y Conectividad"
-      }
-    }
-  }
-  ```
-
-* **Error si cliente/técnico no existe (404):**
-  ```json
-  {
-    "success": false,
-    "message": "No se encontró el cliente con ID: 99"
-  }
-  ```
-
-#### 4. Actualizar una solicitud
+#### 7. Actualizar una solicitud
 * **Método:** `PUT`
 * **Ruta:** `/api/solicitudes/{id}`
-* **Request Body:** Igual que POST (con `clienteId` y `tecnicoAsignadoId`).
 
-#### 5. Actualizar estado de una solicitud
+#### 8. Actualizar estado de una solicitud
 * **Método:** `PATCH`
 * **Ruta:** `/api/solicitudes/{id}/estado/{estado}`
-* **Ejemplo:** `PATCH /api/solicitudes/1/estado/EN_PROCESO`
 
-#### 6. Eliminar una solicitud
+#### 9. Eliminar una solicitud
 * **Método:** `DELETE`
 * **Ruta:** `/api/solicitudes/{id}`
-
----
-
-## ⚠️ Manejo de Errores Globales
-
-* **400 Bad Request:** Validaciones fallidas en los DTOs (`@NotBlank`, `@Email`, `@NotNull`).
-  ```json
-  {
-    "success": false,
-    "message": "Los datos enviados contienen errores",
-    "errors": {
-      "descripcion": "La descripción de la solicitud es obligatoria",
-      "clienteId": "El ID del cliente es obligatorio"
-    }
-  }
-  ```
-* **404 Not Found:** Recurso no encontrado (solicitud, cliente o técnico).
-* **500 Internal Server Error:** Fallos inesperados del servidor.

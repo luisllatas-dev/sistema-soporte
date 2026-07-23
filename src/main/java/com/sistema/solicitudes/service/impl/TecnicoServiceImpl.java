@@ -12,16 +12,12 @@ import com.sistema.solicitudes.service.interfaces.ITecnicoService;
 
 /**
  * Implementación del servicio de técnicos.
- * Recibe DTOs de entrada y los convierte a entidades JPA para persistencia.
  */
 @Service
 public class TecnicoServiceImpl implements ITecnicoService {
 
     private final ITecnicoRepository tecnicoRepository;
 
-    /**
-     * Constructor con inyección de dependencias del repositorio.
-     */
     public TecnicoServiceImpl(ITecnicoRepository tecnicoRepository) {
         this.tecnicoRepository = tecnicoRepository;
     }
@@ -59,5 +55,16 @@ public class TecnicoServiceImpl implements ITecnicoService {
             throw new TecnicoNotFoundException(id);
         }
         tecnicoRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Tecnico> buscarPorFiltros(String especialidad, String nombre) {
+        if (especialidad != null && !especialidad.trim().isEmpty()) {
+            return tecnicoRepository.findByEspecialidadIgnoreCase(especialidad);
+        }
+        if (nombre != null && !nombre.trim().isEmpty()) {
+            return tecnicoRepository.findByNombreContainingIgnoreCase(nombre);
+        }
+        return tecnicoRepository.findAll();
     }
 }

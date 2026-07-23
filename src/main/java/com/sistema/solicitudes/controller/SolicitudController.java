@@ -28,7 +28,6 @@ import jakarta.validation.Valid;
 
 /**
  * Controlador REST para la gestión de solicitudes de soporte técnico.
- * Expone los endpoints CRUD de la API envolviendo las respuestas en ApiResponse.
  */
 @RestController
 @RequestMapping("/api/solicitudes")
@@ -69,6 +68,36 @@ public class SolicitudController {
     public ResponseEntity<ApiResponse<Solicitud>> obtenerPorId(@PathVariable Long id) {
         Solicitud solicitud = solicitudService.obtenerPorId(id);
         return ResponseEntity.ok(ApiResponse.success(solicitud, "Solicitud encontrada exitosamente"));
+    }
+
+    /**
+     * Obtiene las solicitudes de un cliente por su ID.
+     */
+    @Operation(summary = "Buscar solicitudes por Cliente", description = "Retorna el historial de solicitudes de un cliente específico")
+    @GetMapping("/cliente/{clienteId}")
+    public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerPorCliente(@PathVariable Long clienteId) {
+        List<Solicitud> lista = solicitudService.obtenerPorCliente(clienteId);
+        return ResponseEntity.ok(ApiResponse.success(lista, "Solicitudes del cliente obtenidas exitosamente"));
+    }
+
+    /**
+     * Obtiene las solicitudes asignadas a un técnico por su ID.
+     */
+    @Operation(summary = "Buscar solicitudes por Técnico", description = "Retorna las solicitudes asignadas a un técnico específico")
+    @GetMapping("/tecnico/{tecnicoId}")
+    public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerPorTecnico(@PathVariable Long tecnicoId) {
+        List<Solicitud> lista = solicitudService.obtenerPorTecnico(tecnicoId);
+        return ResponseEntity.ok(ApiResponse.success(lista, "Solicitudes del técnico obtenidas exitosamente"));
+    }
+
+    /**
+     * Busca solicitudes por coincidencias en la descripción.
+     */
+    @Operation(summary = "Buscar solicitudes por descripción", description = "Busca solicitudes conteniendo un texto específico en su descripción")
+    @GetMapping("/buscar")
+    public ResponseEntity<ApiResponse<List<Solicitud>>> buscarPorDescripcion(@RequestParam String texto) {
+        List<Solicitud> lista = solicitudService.buscarPorDescripcion(texto);
+        return ResponseEntity.ok(ApiResponse.success(lista, "Búsqueda realizada exitosamente"));
     }
 
     /**
