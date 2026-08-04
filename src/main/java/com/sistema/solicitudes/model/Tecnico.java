@@ -34,6 +34,9 @@ public class Tecnico {
     @Column(name = "especialidad", nullable = false)
     private String especialidad;
 
+    @Column(name = "email", unique = true)
+    private String email;
+
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
@@ -44,6 +47,13 @@ public class Tecnico {
         this.id = id;
         this.nombre = nombre;
         this.especialidad = especialidad;
+    }
+
+    public Tecnico(Long id, String nombre, String especialidad, String email) {
+        this.id = id;
+        this.nombre = nombre;
+        this.especialidad = especialidad;
+        this.email = email;
     }
 
     @PrePersist

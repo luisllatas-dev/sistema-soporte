@@ -50,7 +50,7 @@ public class Solicitud {
     private Cliente cliente;
 
     @ManyToOne
-    @JoinColumn(name = "tecnico_id", nullable = false)
+    @JoinColumn(name = "tecnico_id", nullable = true)
     private Tecnico tecnicoAsignado;
 
     @PrePersist

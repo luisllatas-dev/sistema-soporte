@@ -15,7 +15,7 @@ public interface IClienteRepository extends JpaRepository<Cliente, Long> {
     List<Cliente> findByCorreoElectronico(String correoElectronico);
 
     /**
-     * Busca clientes por nombre que contenga el texto proporcionado (case insensitive).
+     * Busca clientes por nombre o correo electrónico que contengan el texto (case insensitive).
      */
-    List<Cliente> findByNombreContainingIgnoreCase(String nombre);
+    List<Cliente> findByNombreContainingIgnoreCaseOrCorreoElectronicoContainingIgnoreCase(String nombre, String correo);
 }

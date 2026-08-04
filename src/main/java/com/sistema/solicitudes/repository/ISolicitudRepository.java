@@ -32,4 +32,9 @@ public interface ISolicitudRepository extends JpaRepository<Solicitud, Long> {
      * Busca solicitudes que contengan una palabra o texto específico en su descripción (sin distinguir mayúsculas/minúsculas).
      */
     List<Solicitud> findByDescripcionContainingIgnoreCase(String texto);
+
+    /**
+     * Elimina todas las solicitudes pertenecientes a un cliente.
+     */
+    void deleteByClienteId(Long clienteId);
 }
