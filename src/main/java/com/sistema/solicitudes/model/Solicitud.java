@@ -39,6 +39,9 @@ public class Solicitud {
     @Column(name = "estado", nullable = false, length = 20)
     private EstadoSolicitud estado;
 
+    @Column(name = "observaciones", length = 500)
+    private String observaciones;
+
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 

@@ -28,4 +28,6 @@ public class SolicitudRequestDTO {
 
     @NotNull(message = "El ID del técnico asignado es obligatorio")
     private Long tecnicoAsignadoId;
+
+    private String observaciones;
 }

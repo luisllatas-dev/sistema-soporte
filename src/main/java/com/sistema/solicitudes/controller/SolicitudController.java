@@ -50,8 +50,30 @@ public class SolicitudController {
     })
     @GetMapping
     public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerTodas(
-            @RequestParam(required = false) EstadoSolicitud estado) {
-        List<Solicitud> lista = solicitudService.obtenerTodas(estado);
+            @RequestParam(required = false) EstadoSolicitud estado,
+            org.springframework.security.core.Authentication auth) {
+        
+        List<Solicitud> lista;
+        String email = (auth != null) ? auth.getName() : null;
+        boolean esCliente = (auth != null) && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"));
+        boolean esTecnico = (auth != null) && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TECNICO"));
+
+        if (esCliente && email != null) {
+            lista = solicitudService.obtenerMisSolicitudes(email);
+            if (estado != null) {
+                lista = lista.stream().filter(s -> s.getEstado() == estado).toList();
+            }
+        } else if (esTecnico && email != null) {
+            lista = solicitudService.obtenerMisAsignaciones(email);
+            if (estado != null) {
+                lista = lista.stream().filter(s -> s.getEstado() == estado).toList();
+            }
+        } else {
+            lista = solicitudService.obtenerTodas(estado);
+        }
+
         return ResponseEntity.ok(ApiResponse.success(lista, "Lista de solicitudes obtenida exitosamente"));
     }
 
@@ -65,8 +87,27 @@ public class SolicitudController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Solicitud>> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Solicitud>> obtenerPorId(
+            @PathVariable Long id,
+            org.springframework.security.core.Authentication auth) {
         Solicitud solicitud = solicitudService.obtenerPorId(id);
+
+        if (auth != null) {
+            String email = auth.getName();
+            boolean esCliente = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"));
+            boolean esTecnico = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_TECNICO"));
+
+            if (esCliente && (solicitud.getCliente() == null || !solicitud.getCliente().getCorreoElectronico().equalsIgnoreCase(email))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("Acceso denegado: No puede consultar solicitudes de otros clientes"));
+            }
+
+            if (esTecnico && (solicitud.getTecnicoAsignado() == null || !solicitud.getTecnicoAsignado().getEmail().equalsIgnoreCase(email))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("Acceso denegado: No puede consultar solicitudes no asignadas a su cuenta"));
+            }
+        }
+
         return ResponseEntity.ok(ApiResponse.success(solicitud, "Solicitud encontrada exitosamente"));
     }
 
@@ -101,6 +142,30 @@ public class SolicitudController {
     }
 
     /**
+     * Endpoint exclusivo para que el CLIENTE consulte únicamente sus propias solicitudes.
+     * Extrae el email del usuario autenticado en el token JWT.
+     */
+    @Operation(summary = "Ver mis solicitudes (Cliente)", description = "Retorna las solicitudes pertenecientes al cliente autenticado vía JWT")
+    @GetMapping("/mis-solicitudes")
+    public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerMisSolicitudes(org.springframework.security.core.Authentication auth) {
+        String email = auth.getName();
+        List<Solicitud> lista = solicitudService.obtenerMisSolicitudes(email);
+        return ResponseEntity.ok(ApiResponse.success(lista, "Mis solicitudes obtenidas exitosamente"));
+    }
+
+    /**
+     * Endpoint exclusivo para que el TÉCNICO consulte únicamente las solicitudes que le fueron asignadas.
+     * Extrae el email del técnico autenticado en el token JWT.
+     */
+    @Operation(summary = "Ver mis asignaciones (Técnico)", description = "Retorna las solicitudes asignadas al técnico autenticado vía JWT")
+    @GetMapping("/mis-asignaciones")
+    public ResponseEntity<ApiResponse<List<Solicitud>>> obtenerMisAsignaciones(org.springframework.security.core.Authentication auth) {
+        String email = auth.getName();
+        List<Solicitud> lista = solicitudService.obtenerMisAsignaciones(email);
+        return ResponseEntity.ok(ApiResponse.success(lista, "Mis asignaciones obtenidas exitosamente"));
+    }
+
+    /**
      * Registra una nueva solicitud de soporte técnico.
      */
     @Operation(summary = "Registrar nueva solicitud",
@@ -127,8 +192,35 @@ public class SolicitudController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud, cliente o técnico no encontrado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Solicitud>> actualizar(@PathVariable Long id,
-                                                             @Valid @RequestBody SolicitudRequestDTO dto) {
+    public ResponseEntity<ApiResponse<Solicitud>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody SolicitudRequestDTO dto,
+            org.springframework.security.core.Authentication auth) {
+        
+        Solicitud existente = solicitudService.obtenerPorId(id);
+
+        if (auth != null) {
+            String email = auth.getName();
+            boolean esCliente = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"));
+            boolean esTecnico = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_TECNICO"));
+
+            if (esCliente) {
+                if (existente.getCliente() == null || !existente.getCliente().getCorreoElectronico().equalsIgnoreCase(email)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(ApiResponse.error("Acceso denegado: No puede modificar solicitudes de otros clientes"));
+                }
+                if (existente.getEstado() != EstadoSolicitud.ABIERTA) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(ApiResponse.error("Acceso denegado: Solo puede modificar solicitudes cuando aún no han sido atendidas (estado ABIERTA)"));
+                }
+            }
+
+            if (esTecnico && (existente.getTecnicoAsignado() == null || !existente.getTecnicoAsignado().getEmail().equalsIgnoreCase(email))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("Acceso denegado: No puede modificar solicitudes no asignadas a su cuenta"));
+            }
+        }
+
         Solicitud actualizada = solicitudService.actualizar(id, dto);
         return ResponseEntity.ok(ApiResponse.success(actualizada, "Solicitud actualizada exitosamente"));
     }
@@ -160,7 +252,18 @@ public class SolicitudController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Solicitud no encontrada")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> eliminar(
+            @PathVariable Long id,
+            org.springframework.security.core.Authentication auth) {
+        
+        if (auth != null) {
+            boolean esCliente = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"));
+            if (esCliente) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("Acceso denegado: Los clientes no tienen permiso para eliminar solicitudes"));
+            }
+        }
+
         solicitudService.eliminar(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Solicitud eliminada exitosamente"));
     }

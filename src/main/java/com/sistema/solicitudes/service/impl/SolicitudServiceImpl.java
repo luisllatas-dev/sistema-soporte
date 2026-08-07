@@ -60,6 +60,7 @@ public class SolicitudServiceImpl implements ISolicitudService {
         Solicitud solicitud = new Solicitud();
         solicitud.setDescripcion(dto.getDescripcion());
         solicitud.setEstado(dto.getEstado());
+        solicitud.setObservaciones(dto.getObservaciones());
         solicitud.setCliente(cliente);
         solicitud.setTecnicoAsignado(tecnico);
 
@@ -77,6 +78,7 @@ public class SolicitudServiceImpl implements ISolicitudService {
 
         existente.setDescripcion(dto.getDescripcion());
         existente.setEstado(dto.getEstado());
+        existente.setObservaciones(dto.getObservaciones());
         existente.setCliente(cliente);
         existente.setTecnicoAsignado(tecnico);
 
@@ -117,5 +119,15 @@ public class SolicitudServiceImpl implements ISolicitudService {
     @Override
     public List<Solicitud> buscarPorDescripcion(String texto) {
         return solicitudRepository.findByDescripcionContainingIgnoreCase(texto);
+    }
+
+    @Override
+    public List<Solicitud> obtenerMisSolicitudes(String emailCliente) {
+        return solicitudRepository.findByClienteCorreoElectronicoIgnoreCase(emailCliente);
+    }
+
+    @Override
+    public List<Solicitud> obtenerMisAsignaciones(String emailTecnico) {
+        return solicitudRepository.findByTecnicoAsignadoEmailIgnoreCase(emailTecnico);
     }
 }

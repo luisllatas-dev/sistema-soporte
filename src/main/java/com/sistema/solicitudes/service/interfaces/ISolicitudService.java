@@ -56,4 +56,14 @@ public interface ISolicitudService {
      * Busca solicitudes por texto contenido en la descripción.
      */
     List<Solicitud> buscarPorDescripcion(String texto);
+
+    /**
+     * Obtiene las solicitudes pertenecientes al cliente por su correo.
+     */
+    List<Solicitud> obtenerMisSolicitudes(String emailCliente);
+
+    /**
+     * Obtiene las solicitudes asignadas al técnico por su email.
+     */
+    List<Solicitud> obtenerMisAsignaciones(String emailTecnico);
 }

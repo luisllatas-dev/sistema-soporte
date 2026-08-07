@@ -37,4 +37,14 @@ public interface ISolicitudRepository extends JpaRepository<Solicitud, Long> {
      * Elimina todas las solicitudes pertenecientes a un cliente.
      */
     void deleteByClienteId(Long clienteId);
+
+    /**
+     * Busca las solicitudes pertenecientes a un cliente según su correo electrónico.
+     */
+    List<Solicitud> findByClienteCorreoElectronicoIgnoreCase(String correoElectronico);
+
+    /**
+     * Busca las solicitudes asignadas a un técnico según su email.
+     */
+    List<Solicitud> findByTecnicoAsignadoEmailIgnoreCase(String email);
 }
