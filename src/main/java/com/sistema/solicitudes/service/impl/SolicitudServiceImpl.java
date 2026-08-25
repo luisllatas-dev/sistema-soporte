@@ -27,13 +27,16 @@ public class SolicitudServiceImpl implements ISolicitudService {
     private final ISolicitudRepository solicitudRepository;
     private final IClienteRepository clienteRepository;
     private final ITecnicoRepository tecnicoRepository;
+    private final com.sistema.solicitudes.client.NotificationClient notificationClient;
 
     public SolicitudServiceImpl(ISolicitudRepository solicitudRepository,
                                  IClienteRepository clienteRepository,
-                                 ITecnicoRepository tecnicoRepository) {
+                                 ITecnicoRepository tecnicoRepository,
+                                 com.sistema.solicitudes.client.NotificationClient notificationClient) {
         this.solicitudRepository = solicitudRepository;
         this.clienteRepository = clienteRepository;
         this.tecnicoRepository = tecnicoRepository;
+        this.notificationClient = notificationClient;
     }
 
     @Override
@@ -64,7 +67,9 @@ public class SolicitudServiceImpl implements ISolicitudService {
         solicitud.setCliente(cliente);
         solicitud.setTecnicoAsignado(tecnico);
 
-        return solicitudRepository.save(solicitud);
+        Solicitud guardada = solicitudRepository.save(solicitud);
+        notificationClient.notificarCreacion(guardada);
+        return guardada;
     }
 
     @Override
@@ -82,14 +87,18 @@ public class SolicitudServiceImpl implements ISolicitudService {
         existente.setCliente(cliente);
         existente.setTecnicoAsignado(tecnico);
 
-        return solicitudRepository.save(existente);
+        Solicitud actualizada = solicitudRepository.save(existente);
+        notificationClient.notificarActualizacion(actualizada);
+        return actualizada;
     }
 
     @Override
     public Solicitud actualizarEstado(Long id, EstadoSolicitud estado) {
         Solicitud existente = obtenerPorId(id);
         existente.setEstado(estado);
-        return solicitudRepository.save(existente);
+        Solicitud actualizada = solicitudRepository.save(existente);
+        notificationClient.notificarActualizacion(actualizada);
+        return actualizada;
     }
 
     @Override

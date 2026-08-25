@@ -1,0 +1,95 @@
+# Docker y Arquitectura de Microservicios
+**Proyecto de Gestión de Solicitudes de Soporte Técnico**
+
+---
+## ¿Qué es Docker y cómo lo usamos?
+Docker es una tecnología que permite "empaquetar" nuestra aplicación junto con todas sus dependencias (como Java) en un contenedor, asegurando que funcione igual en cualquier entorno (desarrollo, pruebas, producción).
+
+### Nuestro Dockerfile (Build Multi-etapa)
+Hemos implementado las mejores prácticas usando **Multi-stage builds**:
+1. **Etapa de Construcción (Build):** Usamos una imagen con Maven (`maven:3.9.9-eclipse-temurin-21`) para compilar el código fuente y generar el archivo `.jar` sin necesidad de tener Maven instalado en la máquina anfitriona.
+2. **Etapa de Ejecución (Runtime):** Usamos una imagen mucho más ligera (`eclipse-temurin:21-jre-alpine`). Copiamos el `.jar` compilado de la etapa anterior y lo ejecutamos. Esto reduce drásticamente el tamaño final de la imagen y mejora la seguridad.
+
+---
+## ¿Qué son los Microservicios?
+Es un estilo de arquitectura donde una aplicación grande se divide en servicios pequeños, independientes y especializados.
+
+**Ventajas principales:**
+* **Independencia:** Cada servicio se puede desarrollar, desplegar y escalar de forma independiente.
+* **Resiliencia:** Si un servicio falla, los demás pueden seguir funcionando.
+* **Tecnología flexible:** Cada microservicio podría usar su propia base de datos o lenguaje de programación (aunque en nuestro caso usamos Java/Spring Boot).
+
+---
+## Arquitectura de Nuestro Proyecto
+Aunque nuestro servicio `solicitudes` consolida toda la lógica de negocio central (clientes, técnicos y tickets) actuando como un "monolito de dominio", en realidad forma parte de un ecosistema distribuido (Microservicios).
+
+### Servicios Principales:
+1. **`auth-service` (Servicio de Autenticación):** Responsable de verificar credenciales y emitir tokens de seguridad.
+2. **`solicitudes-service` (Nuestro proyecto actual):** Maneja toda la lógica del soporte técnico.
+
+Actualmente **ejecutamos nuestro proyecto usando contenedores Docker**. Sin embargo, ya tenemos preparado un archivo `deployment.yaml` para un **futuro despliegue en Kubernetes**, lo que nos permitirá escalar a 2 réplicas (`replicas: 2`) y usar un balanceador de carga (`LoadBalancer`).
+
+---
+## ¿Cómo se Comunican los Microservicios?
+Nuestros servicios se comunican bajo un modelo seguro, asíncrono y desacoplado, aplicando el principio **Security-by-Design**.
+
+### El flujo de comunicación:
+1. El cliente frontend envía sus credenciales al **`auth-service`**.
+2. El `auth-service` valida y retorna un **Token JWT** (JSON Web Token).
+3. El cliente adjunta este Token en la cabecera HTTP (`Authorization: Bearer <JWT>`) cuando hace peticiones al **`solicitudes-service`**.
+4. Nuestro `solicitudes-service` no necesita volver a consultar a la base de datos de usuarios; en su lugar, utiliza un componente interno (`JwtValidationSvc`) que **verifica la firma criptográfica (HMAC SHA-256)** del token usando una clave secreta compartida con el servicio de autenticación.
+
+---
+## Orquestación con Docker Compose
+Es importante aclarar un concepto clave: **no tenemos 5 imágenes corriendo dentro de un solo contenedor**. 
+
+Un contenedor es una instancia aislada de **una sola imagen**. Lo que hacemos en este proyecto es usar la herramienta **Docker Compose** (a través del archivo `docker-compose.yml`) para ejecutar **5 contenedores independientes al mismo tiempo** y conectarlos en una misma red interna.
+
+Nuestro archivo `docker-compose.yml` levanta los siguientes 5 contenedores simultáneamente:
+1. `mysql-auth`: Base de datos para el servicio de autenticación.
+2. `mysql-solicitudes`: Base de datos principal para los tickets.
+3. `auth-service`: Microservicio encargado de generar los tokens JWT.
+4. `solicitudes-service`: Nuestro proyecto principal de soporte técnico.
+5. `frontend`: La interfaz web construida en React.
+
+Docker Compose se encarga de iniciar cada contenedor en el orden correcto y permite que se comuniquen entre ellos usando sus nombres (ej. `http://auth-service`).
+
+---
+## Comandos Docker Utilizados
+Aquí están los comandos principales que usamos durante el ciclo de vida del proyecto:
+
+### 1. Construir la imagen
+Se utiliza por primera vez o **después de hacer cambios en el código** para empaquetar la aplicación.
+`docker build -t solicitudes-service:latest .`
+
+### 2. Levantar el contenedor
+Inicia el contenedor en segundo plano (`-d`) mapeando el puerto 8080.
+`docker run -d --name solicitudes-test -p 8080:8080 solicitudes-service:latest`
+
+### 3. Detener y Eliminar
+Se utilizan para detener la ejecución actual y limpiar antes de una reconstrucción (el código local no se refleja automáticamente).
+`docker stop solicitudes-test`
+`docker rm -f solicitudes-test`
+
+### 4. Ver logs del contenedor
+Útil para verificar que la aplicación inició correctamente o buscar errores.
+`docker logs solicitudes-test --tail 20 -f`
+
+---
+## Comandos Kubernetes (Preparados para el Futuro)
+Actualmente **no los estamos utilizando**, pero cuando migremos nuestro proyecto a un clúster de Kubernetes, usaremos `kubectl`:
+
+### 1. Aplicar la configuración
+Lee el archivo yaml y crea el Deployment (con 2 réplicas) y el Servicio LoadBalancer en el clúster.
+`kubectl apply -f deployment.yaml`
+
+### 2. Verificar el estado
+Nos permite asegurarnos de que los pods estén corriendo y ver la IP del servicio.
+`kubectl get pods -l app=solicitudes`
+`kubectl get svc solicitudes-service`
+
+---
+## Resumen de Beneficios
+* **Eficiencia actual:** Gracias a Docker y la imagen base Alpine, nuestro servicio arranca rápidamente en cualquier máquina, consumiendo pocos recursos y sin requerir que los desarrolladores instalen Java o Maven localmente.
+* **Seguridad Descentralizada:** La validación local del JWT evita cuellos de botella en la red, ya que no hay que hacer llamadas de red al `auth-service` por cada petición.
+* **Preparados para escalar (Futuro):** Al estar contenedorizados y tener el archivo `deployment.yaml` listo, estamos preparados para dar el salto a Kubernetes y aumentar el número de réplicas en segundos cuando el proyecto lo requiera.
